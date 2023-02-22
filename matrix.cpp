@@ -1,68 +1,124 @@
-/* note: additional optimization - first take everything modulo mod^2, using if (x >= mod^2) x -= mod^2, then take everything modulo mod at the end */
-template<int n>
-struct matrix {
-  using TYPE = ll;
-  TYPE v[n][n];
+template<typename T, int N>
+struct Matrix {
+    array<array<T, N>, N> m;
 
-  matrix() {
-    memset(v, 0, sizeof(v));
-  }
-
-  // matrix<n> mul(matrix &b) {
-    // matrix<n> res;
-    // for (int i = 0; i < n; i++) {
-      // for (int k = 0; k < n; k++) {
-        // for (int j = 0; j < n; j++) {
-          // res.v[i][j] = (res.v[i][j] + v[i][k] * b.v[k][j]) % mod;
-        // }
-      // }
-    // }
-    // return res;
-  // }
-  
-  matrix<n> mul(matrix &b) {
-    matrix<n> res;
-	static const ll msq = mod * mod;
-    for (int i = 0; i < n; i++) {
-      for (int k = 0; k < n; k++) {
-        for (int j = 0; j < n; j++) {
-          res.v[i][j] += v[i][k] * b.v[k][j];
-		  res.v[i][j] = (res.v[i][j] >= msq ? res.v[i][j] - msq : res.v[i][j]);
+    Matrix() {
+        for (int i = 0; i < N; ++i) {
+            for (int j = 0; j < N; ++j) {
+                m[i][j] = 0;
+            }
         }
-      }
     }
-	for (int i = 0; i < n; i++) {
-      for (int j = 0; j < n; j++) {
-        res.v[i][j] %= mod;
-      }
+    Matrix(std::initializer_list<std::initializer_list<T>> s) {
+        int i = 0;
+        for (auto it = s.begin(); it != s.end(); ++it) {
+            int j = 0;
+            for (auto it2 = it->begin(); it2 != it->end(); ++it2) {
+                m[i][j] = *it2;
+                ++j;
+            }
+            ++i;
+        }
     }
-    return res;
-  }
 
-  matrix<n> pow(matrix<n> &a, long long x) {
-    matrix<n> res;
-    for (int i = 0; i < n; i++) res.v[i][i] = 1;
-
-    while (x) {
-      if (x & 1) {
-        res = res.mul(a);
-      }
-      x /= 2;
-      a = a.mul(a);
+    static Matrix E() {
+        Matrix e;
+        for (int i = 0; i < N; ++i) {
+            e[i][i] = 1;
+        }
+        return e;
     }
-    return res;
-  } 
-  
-  void pr() {
-	  cout << "------------\n";
-	  for (int i = 0; i < n; i++) {
-		for (int j = 0; j < n; j++) {
-		  cout << v[i][j] << " ";
-		}
-		cout << '\n';
-	  }
-	  cout << "------------\n";
-  }
-  
-  #pragma message("be careful with mod in matrix")
+
+    array<T, N> &operator[](int i) {
+        return m[i];
+    }
+
+    const array<T, N> &operator[](int i) const {
+        return m[i];
+    }
+
+    Matrix operator * (const Matrix &b) const {
+        Matrix c;
+        for (int i = 0; i < N; ++i) {
+            for (int j = 0; j < N; ++j) {
+                for (int k = 0; k < N; ++k) {
+                    c[i][k] += m[i][j] * b[j][k];
+                }
+            }
+        }
+        return c;
+    }
+
+    Matrix &operator *= (const Matrix &other) {
+        *this = (*this) * other;
+        return *this;
+    }
+
+    Matrix &operator *= (const T &x) {
+        for (int i = 0; i < N; ++i) {
+            for (int j = 0; j < N; ++j) {
+                m[i][j] *= x;
+            }
+        }
+        return *this;
+    }
+    Matrix operator * (const T &x) const {
+        Matrix a = *this;
+        a *= x;
+        return a;
+    }
+
+    Matrix &operator /= (const T &x) {
+        T inv = T(1) / x;
+        for (int i = 0; i < N; ++i) {
+            for (int j = 0; j < N; ++j) {
+                m[i][j] *= inv;
+            }
+        }
+        return *this;
+    }
+    Matrix operator / (const T &x) const {
+        Matrix a = *this;
+        a /= x;
+        return a;
+    }
+
+    Matrix &operator += (const Matrix &other) {
+        for (int i = 0; i < N; ++i) {
+            for (int j = 0; j < N; ++j) {
+                m[i][j] += other[i][j];
+            }
+        }
+        return *this;
+    }
+    Matrix operator + (const Matrix &other) const {
+        Matrix a = *this;
+        a += other;
+        return a;
+    }
+
+    Matrix &operator -= (const Matrix &other) {
+        for (int i = 0; i < N; ++i) {
+            for (int j = 0; j < N; ++j) {
+                m[i][j] -= other[i][j];
+            }
+        }
+        return *this;
+    }
+    Matrix operator - (const Matrix &other) const {
+        Matrix a = *this;
+        a -= other;
+        return a;
+    }
 };
+
+template<typename T, int N>
+Matrix<T, N> pow(Matrix<T, N> m, ll p) {
+    Matrix<T, N> res = Matrix<T, N>::E();
+    while (p) {
+        if (p & 1) res *= m;
+        m *= m;
+        p >>= 1;
+    }
+    return res;
+}
